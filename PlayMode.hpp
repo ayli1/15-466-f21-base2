@@ -67,6 +67,7 @@ struct PlayMode : Mode {
 	std::vector<Precipitation> drops; //Vector of all current falling items
 
 	float table_radius   = 0.9f;
+	float wok_radius     = 0.25f;
 	float drop_period    = 3.0f; // Amount of time until next object drops
 	float time_passed    = 3.0f;
 	float drop_speed     = 5.0f; // How fast the items fall (no gravitational acceleration, sry)

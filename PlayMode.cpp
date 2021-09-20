@@ -9,6 +9,7 @@
 #include "data_path.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <random>
 
@@ -273,9 +274,13 @@ void PlayMode::update(float elapsed) {
 		Precipitation& drop = drops[i];
 
 		//If it hits the table...
-		if (drop.transform->position.z < 0.1f) {
+		if (drop.transform->position.z < 0.5f) {
+			std::cout << "Hit table" << std::endl;
+			std::cout << "Wok position: " << glm::to_string(wok->position) << std::endl;
+			std::cout << "Drop position: " << glm::to_string(drop.transform->position) << std::endl;
 			//... and it lands in the wok, change the score according to the item's value
-			if (glm::distance(wok->position, drop.transform->position) < 1.0f) {
+			if (glm::distance(glm::vec2(wok->position.x, wok->position.y),
+			    glm::vec2(drop.transform->position.x, drop.transform->position.y)) < wok_radius) {
 				score += drop.delta_score;
 			}
 			//Get rid of this item!! We don't want them anymore >:(
