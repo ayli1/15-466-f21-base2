@@ -54,10 +54,32 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 	*/
 
 	//get pointers to thingz
-	for (auto& transform : scene.transforms) {
-		if (transform.name == "Wok Body") wok = &transform;
+	//Referenced: https://github.com/lassyla/game2/blob/master/FishMode.cpp
+	for (auto &drawable : scene.drawables) {
+		if (drawable.transform->name == "Wok Body") wok = (drawable.transform);
+		else if (drawable.transform->name == "Leek") {
+			leek = (drawable.transform);
+			leek_vertex_type  = drawable.pipeline.type;
+			leek_vertex_start = drawable.pipeline.start;
+			leek_vertex_count = drawable.pipeline.count;
+		}
+		else if (drawable.transform->name == "Rock") {
+			rock = (drawable.transform);
+			rock_vertex_type  = drawable.pipeline.type;
+			rock_vertex_start = drawable.pipeline.start;
+			rock_vertex_count = drawable.pipeline.count;
+		}
+		else if (drawable.transform->name == "Heart") {
+			heart = (drawable.transform);
+			heart_vertex_type  = drawable.pipeline.type;
+			heart_vertex_start = drawable.pipeline.start;
+			heart_vertex_count = drawable.pipeline.count;
+		}
 	}
-	if (wok == nullptr) throw std::runtime_error("Wok not found.");
+	if (wok   == nullptr) throw std::runtime_error("Wok not found.");
+	if (leek  == nullptr) throw std::runtime_error("Leek not found.");
+	if (rock  == nullptr) throw std::runtime_error("Rock not found.");
+	if (heart == nullptr) throw std::runtime_error("Heart not found.");
 
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
@@ -175,10 +197,10 @@ void PlayMode::update(float elapsed) {
 	//move wok:
 	{
 		constexpr float WokSpeed = 2.0f;
-		if (left.pressed && !right.pressed) wok->position.x -= WokSpeed * elapsed;
-		if (!left.pressed && right.pressed) wok->position.x += WokSpeed * elapsed;
-		if (down.pressed && !up.pressed)    wok->position.y -= WokSpeed * elapsed;
-		if (!down.pressed && up.pressed)    wok->position.y += WokSpeed * elapsed;
+		if (left.pressed  && !right.pressed) wok->position.x -= WokSpeed * elapsed;
+		if (!left.pressed && right.pressed)  wok->position.x += WokSpeed * elapsed;
+		if (down.pressed  && !up.pressed)    wok->position.y -= WokSpeed * elapsed;
+		if (!down.pressed && up.pressed)     wok->position.y += WokSpeed * elapsed;
 
 		if (wok->position.x > table_radius)  wok->position.x = table_radius;
 		if (wok->position.x < -table_radius) wok->position.x = -table_radius;
@@ -192,6 +214,95 @@ void PlayMode::update(float elapsed) {
 	right.downs = 0;
 	up.downs = 0;
 	down.downs = 0;
+
+	//make it rain (i.e., new drop) every drop_period
+	//Referenced: https://github.com/lassyla/game2/blob/master/FishMode.cpp
+	time_passed += elapsed;
+	if (time_passed > drop_period) {
+		time_passed = 0.0f;
+
+		Precipitation new_drop;
+		new_drop.transform = new Scene::Transform;
+
+		//Randomly choose the type of item
+		int choose_item = rand() % 7;
+		if (choose_item <= 3) { //leek
+			*new_drop.transform = *leek; // So that the initial transform is same as arranged in scene; now all that needs to be changed is position
+										 // DON'T do this if it has a parent... note the warning in Scene.hpp about copy-constructing transforms
+			new_drop.delta_score = 1;
+			new_drop.type  = leek_vertex_type;
+			new_drop.start = leek_vertex_start;
+			new_drop.count = leek_vertex_count;
+		}
+		else if ((choose_item == 4) || (choose_item == 5)) { //rock
+			*new_drop.transform = *rock;
+			new_drop.delta_score = -1;
+			new_drop.type  = rock_vertex_type;
+			new_drop.start = rock_vertex_start;
+			new_drop.count = rock_vertex_count;
+		}
+		else if (choose_item == 6) { //heart
+			*new_drop.transform = *heart;
+			new_drop.delta_score = 5;
+			new_drop.type  = heart_vertex_type;
+			new_drop.start = heart_vertex_start;
+			new_drop.count = heart_vertex_count;
+		}
+
+		int table_radius_hundredths = int(table_radius * 100.0f);
+		new_drop.transform->position.x = 0.0f;//float(rand() % table_radius_hundredths) / 100.0f;
+		new_drop.transform->position.y = 0.0f;//float(rand() % table_radius_hundredths) / 100.0f;
+		new_drop.transform->position.z = 5.0f;
+
+
+		//Add to drawables
+		scene.drawables.emplace_back(new_drop.transform);
+
+		Scene::Drawable& drawable = scene.drawables.back();
+		drawable.pipeline = lit_color_texture_program_pipeline;
+		drawable.pipeline.vao   = hexapod_meshes_for_lit_color_texture_program;
+		drawable.pipeline.type  = new_drop.type;
+		drawable.pipeline.start = new_drop.start;
+		drawable.pipeline.count = new_drop.count;
+
+		//Add to vector of all drops
+		drops.push_back(new_drop);
+	}
+
+	for (size_t i = 0; i < drops.size(); i++) {
+		Precipitation& drop = drops[i];
+
+		//If it hits the table...
+		if (drop.transform->position.z < 0.1f) {
+			//... and it lands in the wok, change the score according to the item's value
+			if (glm::distance(wok->position, drop.transform->position) < 1.0f) {
+				score += drop.delta_score;
+			}
+			//Get rid of this item!! We don't want them anymore >:(
+			//First remove from drawables...
+			//Referenced: https://stackoverflow.com/questions/16445358/stdfind-object-by-member
+			std::list< Scene::Drawable >::iterator it;
+			it = std::find_if(scene.drawables.begin(), scene.drawables.end(),
+				[&](Scene::Drawable& d) { return d.transform == drop.transform; });
+			if (it != scene.drawables.end()) {
+				scene.drawables.erase(it);
+			}
+			else {
+				std::cout << "Hey, couldn't find that drawable ??" << std::endl;
+			}
+
+			//... now remove from drops vector
+			//Referenced: https://stackoverflow.com/questions/3385229/c-erase-vector-element-by-value-rather-than-by-position
+			drops.erase(drops.begin() + i);
+		}
+		//Otherwise, if it's still mid-air, keep it goin'
+		else {
+			// Twirl downwards the way a heart vessel or stamina wheel in Breath of the Wild does <3
+			//drop.transform->rotation *= glm::angleAxis(rotation_speed * elapsed, glm::vec3(0.0f, 0.0f, 1.0f));
+			drop.transform->position.z -= drop_speed * elapsed;
+		}
+	}
+
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
@@ -228,12 +339,12 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion rotates camera; WASD moves wok; escape ungrabs mouse",
+		lines.draw_text("Mouse motion rotates camera; WASD moves wok; escape ungrabs mouse; score: " + std::to_string(score),
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion rotates camera; WASD moves wok; escape ungrabs mouse",
+		lines.draw_text("Mouse motion rotates camera; WASD moves wok; escape ungrabs mouse; score: " + std::to_string(score),
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
