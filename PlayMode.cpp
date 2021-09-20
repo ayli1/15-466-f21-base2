@@ -14,13 +14,13 @@
 
 GLuint hexapod_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > hexapod_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("hexapod.pnct"));
+	MeshBuffer const *ret = new MeshBuffer(data_path("wok_it_gurl.pnct"));
 	hexapod_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
 Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("hexapod.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+	return new Scene(data_path("wok_it_gurl.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
 		Mesh const &mesh = hexapod_meshes->lookup(mesh_name);
 
 		scene.drawables.emplace_back(transform);
@@ -38,6 +38,7 @@ Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
 
 PlayMode::PlayMode() : scene(*hexapod_scene) {
 	//get pointers to leg for convenience:
+	/*
 	for (auto &transform : scene.transforms) {
 		if (transform.name == "Hip.FL") hip = &transform;
 		else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
@@ -50,6 +51,13 @@ PlayMode::PlayMode() : scene(*hexapod_scene) {
 	hip_base_rotation = hip->rotation;
 	upper_leg_base_rotation = upper_leg->rotation;
 	lower_leg_base_rotation = lower_leg->rotation;
+	*/
+
+	//get pointers to thingz
+	for (auto& transform : scene.transforms) {
+		if (transform.name == "Wok Body") wok = &transform;
+	}
+	if (wok == nullptr) throw std::runtime_error("Wok not found.");
 
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
@@ -122,6 +130,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 void PlayMode::update(float elapsed) {
 
 	//slowly rotates through [0,1):
+	/*
 	wobble += elapsed / 10.0f;
 	wobble -= std::floor(wobble);
 
@@ -137,7 +146,9 @@ void PlayMode::update(float elapsed) {
 		glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
 		glm::vec3(0.0f, 0.0f, 1.0f)
 	);
+	*/
 
+	/*
 	//move camera:
 	{
 
@@ -158,6 +169,22 @@ void PlayMode::update(float elapsed) {
 		glm::vec3 forward = -frame[2];
 
 		camera->transform->position += move.x * right + move.y * forward;
+	}
+	*/
+
+	//move wok:
+	{
+		constexpr float WokSpeed = 2.0f;
+		if (left.pressed && !right.pressed) wok->position.x -= WokSpeed * elapsed;
+		if (!left.pressed && right.pressed) wok->position.x += WokSpeed * elapsed;
+		if (down.pressed && !up.pressed)    wok->position.y -= WokSpeed * elapsed;
+		if (!down.pressed && up.pressed)    wok->position.y += WokSpeed * elapsed;
+
+		if (wok->position.x > table_radius)  wok->position.x = table_radius;
+		if (wok->position.x < -table_radius) wok->position.x = -table_radius;
+		if (wok->position.y > table_radius)  wok->position.y = table_radius;
+		if (wok->position.y < -table_radius) wok->position.y = -table_radius;
+
 	}
 
 	//reset button press counters:
@@ -201,12 +228,12 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		lines.draw_text("Mouse motion rotates camera; WASD moves wok; escape ungrabs mouse",
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		lines.draw_text("Mouse motion rotates camera; WASD moves wok; escape ungrabs mouse",
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
