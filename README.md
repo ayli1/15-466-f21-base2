@@ -1,22 +1,18 @@
-# (TODO: your game's title)
+# My Heart Is in the Wok
 
-Author: (TODO: your name)
+Author: Anna Li
 
-Design: (TODO: In two sentences or fewer, describe what is new and interesting about your game.)
+Design: Catch all the leeks in your wok! And if you see a heart, catch that, too -- it's even sweeter. But don't catch any rocks; no one likes a rock wok.
 
 Screen Shot:
 
 ![Screen Shot](screenshot.png)
 
-How Your Asset Pipeline Works:
-
-(TODO: describe the steps in your asset pipeline, from source files to tiles/backgrounds/whatever you upload to the PPU466.)
-
 How To Play:
 
-(TODO: describe the controls and (if needed) goals/strategy.)
+Use the WASD keys to move the wok across the table. Leeks and hearts will bump up your score, but rocks will knock it down, so get your wok away from them! The more points you get, the more that falls from the sky. You can also use the mouse to change the camera angle, but it will only help so much; you'll need to rely on your depth perception and fast reflexes more than anything :^)
 
-Sources: (TODO: list a source URL for any assets you did not create yourself. Make sure you have a license for the asset.)
+Sources: All assets made by Anna Li.
 
 This game was built with [NEST](NEST.md).
 
