@@ -27,17 +27,6 @@ struct PlayMode : Mode {
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
 
-	//hexapod leg to wobble:
-	/*
-	Scene::Transform *hip = nullptr;
-	Scene::Transform *upper_leg = nullptr;
-	Scene::Transform *lower_leg = nullptr;
-	glm::quat hip_base_rotation;
-	glm::quat upper_leg_base_rotation;
-	glm::quat lower_leg_base_rotation;
-	float wobble = 0.0f;
-	*/
-
 	struct Precipitation {
 		Scene::Transform* transform;
 		int delta_score = 0; // +1 for leek; -1 for rock; +5 for heart
@@ -68,10 +57,11 @@ struct PlayMode : Mode {
 
 	float table_radius   = 3.5f;
 	float wok_radius     = 1.0f;
+	float wok_speed      = 4.0f;
 	float drop_period    = 3.0f; // Amount of time until next object drops
 	float time_passed    = 3.0f;
-	float drop_speed     = 5.0f; // How fast the items fall (no gravitational acceleration, sry)
-	float rotation_speed = 0.8f; // How fast the items gracefully twirl downward
+	float drop_speed     = 4.0f; // How fast the items fall (no gravitational acceleration, sry)
+	float rotation_speed = 1.2f; // How fast the items gracefully twirl downward
 	
 	int score = 0;
 	

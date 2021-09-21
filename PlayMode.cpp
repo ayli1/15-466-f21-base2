@@ -38,21 +38,6 @@ Load< Scene > hexapod_scene(LoadTagDefault, []() -> Scene const * {
 });
 
 PlayMode::PlayMode() : scene(*hexapod_scene) {
-	//get pointers to leg for convenience:
-	/*
-	for (auto &transform : scene.transforms) {
-		if (transform.name == "Hip.FL") hip = &transform;
-		else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
-		else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
-	}
-	if (hip == nullptr) throw std::runtime_error("Hip not found.");
-	if (upper_leg == nullptr) throw std::runtime_error("Upper leg not found.");
-	if (lower_leg == nullptr) throw std::runtime_error("Lower leg not found.");
-
-	hip_base_rotation = hip->rotation;
-	upper_leg_base_rotation = upper_leg->rotation;
-	lower_leg_base_rotation = lower_leg->rotation;
-	*/
 
 	//get pointers to thingz
 	//Referenced: https://github.com/lassyla/game2/blob/master/FishMode.cpp
@@ -152,56 +137,12 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 void PlayMode::update(float elapsed) {
 
-	//slowly rotates through [0,1):
-	/*
-	wobble += elapsed / 10.0f;
-	wobble -= std::floor(wobble);
-
-	hip->rotation = hip_base_rotation * glm::angleAxis(
-		glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 1.0f, 0.0f)
-	);
-	upper_leg->rotation = upper_leg_base_rotation * glm::angleAxis(
-		glm::radians(7.0f * std::sin(wobble * 2.0f * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	);
-	lower_leg->rotation = lower_leg_base_rotation * glm::angleAxis(
-		glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	);
-	*/
-
-	/*
-	//move camera:
-	{
-
-		//combine inputs into a move:
-		constexpr float PlayerSpeed = 30.0f;
-		glm::vec2 move = glm::vec2(0.0f);
-		if (left.pressed && !right.pressed) move.x =-1.0f;
-		if (!left.pressed && right.pressed) move.x = 1.0f;
-		if (down.pressed && !up.pressed) move.y =-1.0f;
-		if (!down.pressed && up.pressed) move.y = 1.0f;
-
-		//make it so that moving diagonally doesn't go faster:
-		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
-
-		glm::mat4x3 frame = camera->transform->make_local_to_parent();
-		glm::vec3 right = frame[0];
-		//glm::vec3 up = frame[1];
-		glm::vec3 forward = -frame[2];
-
-		camera->transform->position += move.x * right + move.y * forward;
-	}
-	*/
-
 	//move wok:
 	{
-		constexpr float WokSpeed = 2.0f;
-		if (left.pressed  && !right.pressed) wok->position.x -= WokSpeed * elapsed;
-		if (!left.pressed && right.pressed)  wok->position.x += WokSpeed * elapsed;
-		if (down.pressed  && !up.pressed)    wok->position.y -= WokSpeed * elapsed;
-		if (!down.pressed && up.pressed)     wok->position.y += WokSpeed * elapsed;
+		if (left.pressed  && !right.pressed) wok->position.x -= wok_speed * elapsed;
+		if (!left.pressed && right.pressed)  wok->position.x += wok_speed * elapsed;
+		if (down.pressed  && !up.pressed)    wok->position.y -= wok_speed * elapsed;
+		if (!down.pressed && up.pressed)     wok->position.y += wok_speed * elapsed;
 
 		if (wok->position.x > table_radius)  wok->position.x = table_radius;
 		if (wok->position.x < -table_radius) wok->position.x = -table_radius;
@@ -277,9 +218,6 @@ void PlayMode::update(float elapsed) {
 
 		//If it hits the table...
 		if (drop.transform->position.z < 0.5f) {
-			std::cout << "Hit table" << std::endl;
-			std::cout << "Wok position: " << glm::to_string(wok->position) << std::endl;
-			std::cout << "Drop position: " << glm::to_string(drop.transform->position) << std::endl;
 			//... and it lands in the wok, change the score according to the item's value
 			if (glm::distance(glm::vec2(wok->position.x, wok->position.y),
 			    glm::vec2(drop.transform->position.x, drop.transform->position.y)) < wok_radius) {
@@ -305,10 +243,14 @@ void PlayMode::update(float elapsed) {
 		//Otherwise, if it's still mid-air, keep it goin'
 		else {
 			// Twirl downwards the way a heart vessel or stamina wheel in Breath of the Wild does <3
-			//drop.transform->rotation *= glm::angleAxis(rotation_speed * elapsed, glm::vec3(0.0f, 0.0f, 1.0f));
+			drop.transform->rotation *= glm::angleAxis(rotation_speed * elapsed, glm::vec3(0.0f, 0.0f, 1.0f));
 			drop.transform->position.z -= drop_speed * elapsed;
 		}
 	}
+
+	// Decrease drop_period (e.g., increase frequency of drops) as score increases
+	drop_period = 3.0f - float(score) / 5.0f;
+	if (drop_period < 0.5f) drop_period = 0.5f; // Don't let it fall below 0.5
 
 }
 
