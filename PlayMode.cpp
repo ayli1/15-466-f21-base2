@@ -228,22 +228,24 @@ void PlayMode::update(float elapsed) {
 		//Randomly choose the type of item
 		int choose_item = rand() % 7;
 		if (choose_item <= 3) { //leek
-			*new_drop.transform = *leek; // So that the initial transform is same as arranged in scene; now all that needs to be changed is position
-										 // DON'T do this if it has a parent... note the warning in Scene.hpp about copy-constructing transforms
+			new_drop.transform->rotation = leek->rotation;
+			new_drop.transform->scale    = leek->scale;
 			new_drop.delta_score = 1;
 			new_drop.type  = leek_vertex_type;
 			new_drop.start = leek_vertex_start;
 			new_drop.count = leek_vertex_count;
 		}
 		else if ((choose_item == 4) || (choose_item == 5)) { //rock
-			*new_drop.transform = *rock;
+			new_drop.transform->rotation = rock->rotation;
+			new_drop.transform->scale    = rock->scale;
 			new_drop.delta_score = -1;
 			new_drop.type  = rock_vertex_type;
 			new_drop.start = rock_vertex_start;
 			new_drop.count = rock_vertex_count;
 		}
 		else if (choose_item == 6) { //heart
-			*new_drop.transform = *heart;
+			new_drop.transform->rotation = heart->rotation;
+			new_drop.transform->scale    = heart->scale;
 			new_drop.delta_score = 5;
 			new_drop.type  = heart_vertex_type;
 			new_drop.start = heart_vertex_start;
@@ -251,8 +253,8 @@ void PlayMode::update(float elapsed) {
 		}
 
 		int table_radius_hundredths = int(table_radius * 100.0f);
-		new_drop.transform->position.x = 0.0f;//float(rand() % table_radius_hundredths) / 100.0f;
-		new_drop.transform->position.y = 0.0f;//float(rand() % table_radius_hundredths) / 100.0f;
+		new_drop.transform->position.x = (float(rand() % 2) * -1) * float(rand() % table_radius_hundredths) / 100.0f;
+		new_drop.transform->position.y = (float(rand() % 2) * -1) * float(rand() % table_radius_hundredths) / 100.0f;
 		new_drop.transform->position.z = 5.0f;
 
 
