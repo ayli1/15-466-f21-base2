@@ -12,6 +12,7 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include <random>
+#include <algorithm>
 
 GLuint hexapod_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > hexapod_meshes(LoadTagDefault, []() -> MeshBuffer const * {
